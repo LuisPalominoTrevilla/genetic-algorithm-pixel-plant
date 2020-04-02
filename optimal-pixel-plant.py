@@ -1,4 +1,4 @@
-from random import randint, choices, random
+from random import randint, choices, random, choice
 import imageManipulation as img
 
 TRUNK = '#663d14'
@@ -10,6 +10,19 @@ trunk_limit = 32 - 8
 
 def createEmptyCanvas(m, n):
   return [[NULL for i in range(n)] for i in range(m)]
+
+def getPossibleLocations(i, j, im):
+  successors = []
+  forbidden = set([BRANCH, TRUNK])
+  if j > 0 and im[i][j-1] not in forbidden:
+    successors.append((i, j-1))
+  if j < 15 and im[i][j+1] not in forbidden:
+    successors.append((i, j+1))
+  if i > 0 and im[i-1][j] not in forbidden:
+    successors.append((i-1, j))
+  if i < trunk_limit-1 and im[i+1][j] not in forbidden:
+    successors.append((i+1, j))
+  return successors
 
 def genTree():
   im = createEmptyCanvas(32, 16)
@@ -47,7 +60,7 @@ def genTree():
       branch_start = prev[0] if left_growth else prev[1] - 1
       pixel_pos_i = i
       pixel_pos_j = branch_start
-      while pixel_pos_j > 0 and pixel_pos_j < 15 and pixel_pos_i > 0 and pixel_pos_i < trunk_limit:
+      while pixel_pos_j > 0 and pixel_pos_j < 15 and pixel_pos_i > 0 and pixel_pos_i < trunk_limit-1:
         pixel_pos_j += -1 if left_growth else 1
         if im[pixel_pos_i][pixel_pos_j] != NULL:
           break
@@ -59,7 +72,14 @@ def genTree():
           )[0]
         im[pixel_pos_i][pixel_pos_j] = BRANCH
       # Paint tree leaf
-        
+      num_leafs = randint(3,8)
+      leaf_positions = getPossibleLocations(pixel_pos_i, pixel_pos_j, im)
+      while num_leafs > 0:
+        i, j = leaf_positions.pop()
+        im[i][j] = LEAF
+        if (len(leaf_positions) == 0):
+          leaf_positions = getPossibleLocations(i, j, im)
+        num_leafs-=1
     if (prev[0] < 0 and prev[1] <= 0) or (prev[0] >= 16 and prev[1] >= 15):
       break
   return im
