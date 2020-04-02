@@ -1,4 +1,4 @@
-from random import randint, choices
+from random import randint, choices, random
 import imageManipulation as img
 
 TRUNK = '#663d14'
@@ -36,10 +36,28 @@ def genTree():
           weights=[.1, .3, .6],
           k=1)[0]
     prev = (num, num+trunk_girth)
+    # Paint tree trunk
     for j in range(num, num+trunk_girth):
       if j < 0 or j >= 16:
         continue
       im[i][j] = TRUNK
+    # Paint tree branch
+    if (trunk_girth > 1 and i < trunk_limit and random() < .38 and i % 2 != trunk_limit % 2):
+      left_growth = randint(0, 1) == 0
+      branch_start = prev[0] if left_growth else prev[1] - 1
+      branch_length = randint(4, 14)
+      pixel_pos_i = i
+      for j in range(branch_length):
+        pixel_pos_j = branch_start-j if left_growth else branch_start+j
+        if pixel_pos_j < 0 or pixel_pos_j > 15 or pixel_pos_i <= 0 or pixel_pos_i >= trunk_limit:
+          break
+        im[pixel_pos_i][pixel_pos_j] = BRANCH
+        pixel_pos_i += choices(
+            population=[1, 0, -1],
+            weights=[.05, .25, .7],
+            k=1
+          )[0]
+        im[pixel_pos_i][pixel_pos_j] = BRANCH
     if (prev[0] < 0 and prev[1] <= 0) or (prev[0] >= 16 and prev[1] >= 15):
       break
   return im
