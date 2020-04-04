@@ -60,7 +60,7 @@ def genTree():
       branch_start = prev[0] if left_growth else prev[1] - 1
       pixel_pos_i = i
       pixel_pos_j = branch_start
-      while pixel_pos_j > 0 and pixel_pos_j < 15 and pixel_pos_i > 0 and pixel_pos_i < trunk_limit-1:
+      while pixel_pos_j > 0 and pixel_pos_j < 15 and pixel_pos_i > 0 and pixel_pos_i < trunk_limit:
         pixel_pos_j += -1 if left_growth else 1
         if im[pixel_pos_i][pixel_pos_j] != NULL:
           break
@@ -84,14 +84,10 @@ def genTree():
       break
   return im
 
-# imRGBs = []
-# for i in range(5):
-#   im = genTree()
-#   imRGBs.append(img.toRGBImage(im))
+imRGBs = []
+for i in range(5):
+  im = genTree()
+  imRGBs.append(img.toRGBImage(im))
 
-im = genTree()
-imRGB = img.toRGBImage(im)
-img.showTree(imRGB)
-
-#img.showTrees(imRGBs)
+img.showTrees(imRGBs)
 
