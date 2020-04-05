@@ -29,7 +29,9 @@ class PixelPlant:
             successors.append((i+1, j))
         return successors
 
-    def _getNeighbors(self, i, j):
+    def _getNeighbors(self, i, j, i_limit=None):
+        if i_limit is None:
+            i_limit = self.h-1
         neighbors = []
         if j > 0:
             neighbors.append((i, j-1))
@@ -37,7 +39,7 @@ class PixelPlant:
             neighbors.append((i, j+1))
         if i > 0:
             neighbors.append((i-1, j))
-        if i < self.trunk_limit-1:
+        if i < i_limit:
             neighbors.append((i+1, j))
         return neighbors
 
@@ -90,17 +92,18 @@ class PixelPlant:
                     if pixel_pos_i >= self.trunk_limit or self.im[pixel_pos_i][pixel_pos_j] != self.NULL:
                         break
                     self.im[pixel_pos_i][pixel_pos_j] = self.BRANCH
-                if not painted_branch or pixel_pos_j < 0 or pixel_pos_j >= self.w or pixel_pos_i < 0 or pixel_pos_i > self.trunk_limit:
+                if not painted_branch or pixel_pos_j < 0 or pixel_pos_j >= self.w or pixel_pos_i < 0 or pixel_pos_i >= self.trunk_limit:
                     continue
                 # Paint tree leaf
                 num_leafs = randint(3, 8)
                 leaf_positions = self._getPossibleLocations(
                     pixel_pos_i, pixel_pos_j)
                 while num_leafs > 0 and len(leaf_positions) > 0:
-                    i, j = leaf_positions.pop()
-                    self.im[i][j] = self.LEAF
+                    leaf_i, leaf_j = leaf_positions.pop()
+                    self.im[leaf_i][leaf_j] = self.LEAF
                     if (len(leaf_positions) == 0):
-                        leaf_positions = self._getPossibleLocations(i, j)
+                        leaf_positions = self._getPossibleLocations(
+                            leaf_i, leaf_j)
                     num_leafs -= 1
             if (prev[0] < 0 and prev[1] <= 0) or (prev[0] >= self.w and prev[1] > self.w):
                 break
@@ -119,9 +122,13 @@ class PixelPlant:
                 frontier = [(i, j)]
                 connected = False
                 num_leafs = 0
+                forbidden_position = False
                 while len(frontier) > 0:
                     leaf_i, leaf_j = frontier.pop()
                     num_leafs += 1
+                    if leaf_i >= self.trunk_limit or num_leafs > 8:
+                        forbidden_position = True
+                        break
                     energyProduced += 2
                     nutrientsConsumed += .25
                     im[leaf_i][leaf_j] = self.NULL
@@ -132,7 +139,7 @@ class PixelPlant:
                             frontier.append((n_i, n_j))
                         elif im[n_i][n_j] == self.BRANCH:
                             connected = True
-                if not connected or num_leafs > 8:
+                if not connected or num_leafs > 8 or forbidden_position:
                     return 0
         # Calculate branch score and validate rules
         for i in range(self.h):
@@ -142,8 +149,13 @@ class PixelPlant:
                 visited = set()
                 frontier = [(i, j)]
                 connected = False
+                forbidden_position = False
                 while len(frontier) > 0:
                     branch_i, branch_j = frontier.pop()
+                    if branch_i >= self.trunk_limit:
+                        print("Forbidden position branch")
+                        forbidden_position = True
+                        break
                     energyConsumed += .25
                     nutrientsConsumed += .5
                     im[branch_i][branch_j] = self.NULL
@@ -154,14 +166,28 @@ class PixelPlant:
                             frontier.append((n_i, n_j))
                         elif im[n_i][n_j] == self.TRUNK:
                             connected = True
-                if not connected:
+                if not connected or forbidden_position:
                     return 0
         # Calculate trunk score and validate rules
         for i in range(self.h):
             for j in range(self.w):
                 if im[i][j] != self.TRUNK:
                     continue
-                energyConsumed += .1
-                nutrientsStored += 1.5
-                im[i][j] = self.NULL
+                visited = set()
+                frontier = [(i, j)]
+                rooted = False
+                while len(frontier) > 0:
+                    trunk_i, trunk_j = frontier.pop()
+                    if trunk_i == self.h-1:
+                        rooted = True
+                    energyConsumed += .1
+                    nutrientsStored += 1.5
+                    im[trunk_i][trunk_j] = self.NULL
+                    neighbors = self._getNeighbors(trunk_i, trunk_j)
+                    for n_i, n_j in neighbors:
+                        if im[n_i][n_j] == self.TRUNK and (n_i, n_j) not in visited:
+                            visited.add((n_i, n_j))
+                            frontier.append((n_i, n_j))
+                if not rooted:
+                    return 0
         return (energyProduced - energyConsumed) ** 2 + (nutrientsStored - nutrientsConsumed) ** 2
