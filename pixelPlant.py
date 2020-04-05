@@ -75,17 +75,23 @@ class PixelPlant:
                 branch_start = prev[0] if left_growth else prev[1] - 1
                 pixel_pos_i = i
                 pixel_pos_j = branch_start
+                painted_branch = False
                 while pixel_pos_j > 0 and pixel_pos_j < self.w-1 and pixel_pos_i > 0 and pixel_pos_i < self.trunk_limit:
                     pixel_pos_j += -1 if left_growth else 1
                     if self.im[pixel_pos_i][pixel_pos_j] != self.NULL:
                         break
                     self.im[pixel_pos_i][pixel_pos_j] = self.BRANCH
+                    painted_branch = True
                     pixel_pos_i += choices(
                         population=[1, 0, -1],
                         weights=[.05, .25, .7],
                         k=1
                     )[0]
+                    if pixel_pos_i >= self.trunk_limit or self.im[pixel_pos_i][pixel_pos_j] != self.NULL:
+                        break
                     self.im[pixel_pos_i][pixel_pos_j] = self.BRANCH
+                if not painted_branch or pixel_pos_j < 0 or pixel_pos_j >= self.w or pixel_pos_i < 0 or pixel_pos_i > self.trunk_limit:
+                    continue
                 # Paint tree leaf
                 num_leafs = randint(3, 8)
                 leaf_positions = self._getPossibleLocations(
@@ -133,9 +139,23 @@ class PixelPlant:
             for j in range(self.w):
                 if im[i][j] != self.BRANCH:
                     continue
-                energyConsumed += .25
-                nutrientsConsumed += .5
-                im[i][j] = self.NULL
+                visited = set()
+                frontier = [(i, j)]
+                connected = False
+                while len(frontier) > 0:
+                    branch_i, branch_j = frontier.pop()
+                    energyConsumed += .25
+                    nutrientsConsumed += .5
+                    im[branch_i][branch_j] = self.NULL
+                    neighbors = self._getNeighbors(branch_i, branch_j)
+                    for n_i, n_j in neighbors:
+                        if im[n_i][n_j] == self.BRANCH and (n_i, n_j) not in visited:
+                            visited.add((n_i, n_j))
+                            frontier.append((n_i, n_j))
+                        elif im[n_i][n_j] == self.TRUNK:
+                            connected = True
+                if not connected:
+                    return 0
         # Calculate trunk score and validate rules
         for i in range(self.h):
             for j in range(self.w):
