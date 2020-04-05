@@ -29,6 +29,18 @@ class PixelPlant:
             successors.append((i+1, j))
         return successors
 
+    def _getNeighbors(self, i, j):
+        neighbors = []
+        if j > 0:
+            neighbors.append((i, j-1))
+        if j < self.w-1:
+            neighbors.append((i, j+1))
+        if i > 0:
+            neighbors.append((i-1, j))
+        if i < self.trunk_limit-1:
+            neighbors.append((i+1, j))
+        return neighbors
+
     def genRandom(self):
         num = randint(4, 10)
         for i in range(self.h-1, 2, -1):
@@ -97,9 +109,25 @@ class PixelPlant:
             for j in range(self.w):
                 if im[i][j] != self.LEAF:
                     continue
-                energyProduced += 2
-                nutrientsConsumed += .25
-                im[i][j] = self.NULL
+                visited = set()
+                frontier = [(i, j)]
+                connected = False
+                num_leafs = 0
+                while len(frontier) > 0:
+                    leaf_i, leaf_j = frontier.pop()
+                    num_leafs += 1
+                    energyProduced += 2
+                    nutrientsConsumed += .25
+                    im[leaf_i][leaf_j] = self.NULL
+                    neighbors = self._getNeighbors(leaf_i, leaf_j)
+                    for n_i, n_j in neighbors:
+                        if im[n_i][n_j] == self.LEAF and (n_i, n_j) not in visited:
+                            visited.add((n_i, n_j))
+                            frontier.append((n_i, n_j))
+                        elif im[n_i][n_j] == self.BRANCH:
+                            connected = True
+                if not connected or num_leafs > 8:
+                    return 0
         # Calculate branch score and validate rules
         for i in range(self.h):
             for j in range(self.w):
