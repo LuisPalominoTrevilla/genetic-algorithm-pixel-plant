@@ -14,7 +14,7 @@ def toRGBImage(im):
 
 def showTrees(imRGBs):
     fig = plt.figure(figsize=(6, 6))
-    columns = 5
+    columns = 3
 
     for i in range(1, columns + 1):
         fig.add_subplot(1, columns, i)

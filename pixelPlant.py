@@ -1,4 +1,5 @@
 from random import randint, choices, random, choice
+import imageManipulation as img
 from copy import deepcopy
 
 
@@ -107,7 +108,17 @@ class PixelPlant:
                     num_leafs -= 1
             if (prev[0] < 0 and prev[1] <= 0) or (prev[0] >= self.w and prev[1] > self.w):
                 break
-        return self.im
+
+    def crossover(self, plant):
+        crossover_i, crossover_j = self.h/2, self.w/2
+        offspring = PixelPlant()
+        parent_1 = True
+        for i in range(offspring.h):
+            for j in range(offspring.w):
+                if i == crossover_i and j == crossover_j:
+                    parent_1 = False
+                offspring.im[i][j] = self.im[i][j] if parent_1 else plant.im[i][j]
+        return offspring
 
     def getScore(self):
         nutrientsStored, nutrientsConsumed = 0, 0
@@ -191,3 +202,6 @@ class PixelPlant:
                 if not rooted:
                     return 0
         return (energyProduced - energyConsumed) ** 2 + (nutrientsStored - nutrientsConsumed) ** 2
+
+    def toImage(self):
+        return img.toRGBImage(self.im)
