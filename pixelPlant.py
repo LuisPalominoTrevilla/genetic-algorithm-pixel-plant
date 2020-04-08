@@ -180,13 +180,17 @@ class PixelPlant:
                 if not connected or forbidden_position:
                     return 0
         # Calculate trunk score and validate rules
+        foundTrunk = False
         for i in range(self.h):
             for j in range(self.w):
                 if im[i][j] != self.TRUNK:
                     continue
+                if foundTrunk:
+                    return 0
                 visited = set()
                 frontier = [(i, j)]
                 rooted = False
+                foundTrunk = True
                 while len(frontier) > 0:
                     trunk_i, trunk_j = frontier.pop()
                     if trunk_i == self.h-1:

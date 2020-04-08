@@ -3,13 +3,13 @@ import numpy
 import ga
 from pixelPlant import PixelPlant
 
-pop_size = 15
+pop_size = 30
 new_population = []
 for i in range(pop_size):
     new_population.append(PixelPlant())
     new_population[i].genRandom()
 
-num_generations = 10000
+num_generations = 1000
 
 fittestPixelPlant = None
 
