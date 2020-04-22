@@ -1,10 +1,10 @@
 from random import randint, choices, random, choice
 import imageManipulation as img
 from copy import deepcopy
-
+import sys
 
 class PixelPlant:
-    def __init__(self):
+    def __init__(self, rulesManager):
         self.TRUNK = '#663d14'
         self.BRANCH = '#855723'
         self.LEAF = '#4e691a'
@@ -13,6 +13,7 @@ class PixelPlant:
         self.h = 32
         self.trunk_limit = self.h - 8
         self.im = self._createEmptyCanvas()
+        self.rulesManager = rulesManager
 
     def _createEmptyCanvas(self):
         return [[self.NULL for j in range(self.w)] for i in range(self.h)]
@@ -45,6 +46,8 @@ class PixelPlant:
         return neighbors
 
     def genRandom(self):
+        MAX_NUM_LEAVES = self.rulesManager.max_num_leaves
+
         num = randint(4, 10)
         for i in range(self.h-1, 2, -1):
             if i >= self.trunk_limit:
@@ -96,7 +99,7 @@ class PixelPlant:
                 if not painted_branch or pixel_pos_j < 0 or pixel_pos_j >= self.w or pixel_pos_i < 0 or pixel_pos_i >= self.trunk_limit:
                     continue
                 # Paint tree leaf
-                num_leafs = randint(3, 8)
+                num_leafs = randint(3, MAX_NUM_LEAVES)
                 leaf_positions = self._getPossibleLocations(
                     pixel_pos_i, pixel_pos_j)
                 while num_leafs > 0 and len(leaf_positions) > 0:
@@ -111,7 +114,7 @@ class PixelPlant:
 
     def crossover(self, plant):
         crossover_i, crossover_j = self.h/2, self.w/2
-        offspring = PixelPlant()
+        offspring = PixelPlant(plant.rulesManager)
         parent_1 = True
         for i in range(offspring.h):
             for j in range(offspring.w):
@@ -121,6 +124,7 @@ class PixelPlant:
         return offspring
 
     def getScore(self):
+        MAX_NUM_LEAVES = self.rulesManager.max_num_leaves
         nutrientsStored, nutrientsConsumed = 0, 0
         energyProduced, energyConsumed = 0, 0
         im = deepcopy(self.im)
@@ -137,7 +141,7 @@ class PixelPlant:
                 while len(frontier) > 0:
                     leaf_i, leaf_j = frontier.pop()
                     num_leafs += 1
-                    if leaf_i >= self.trunk_limit or num_leafs > 8:
+                    if leaf_i >= self.trunk_limit or num_leafs > MAX_NUM_LEAVES:
                         forbidden_position = True
                         break
                     energyProduced += 2
@@ -150,19 +154,21 @@ class PixelPlant:
                             frontier.append((n_i, n_j))
                         elif im[n_i][n_j] == self.BRANCH:
                             connected = True
-                if not connected or num_leafs > 8 or forbidden_position:
+                if not connected or num_leafs > MAX_NUM_LEAVES or forbidden_position:
                     return 0
         # Calculate branch score and validate rules
         for i in range(self.h):
             for j in range(self.w):
                 if im[i][j] != self.BRANCH:
                     continue
+                num_branches = 0
                 visited = set()
                 frontier = [(i, j)]
                 connected = False
                 forbidden_position = False
                 while len(frontier) > 0:
                     branch_i, branch_j = frontier.pop()
+                    num_branches += 1
                     if branch_i >= self.trunk_limit:
                         print("Forbidden position branch")
                         forbidden_position = True
@@ -177,7 +183,7 @@ class PixelPlant:
                             frontier.append((n_i, n_j))
                         elif im[n_i][n_j] == self.TRUNK:
                             connected = True
-                if not connected or forbidden_position:
+                if not connected or forbidden_position or num_branches < self.rulesManager.min_num_branches or num_branches > self.rulesManager.max_num_branches:
                     return 0
         # Calculate trunk score and validate rules
         foundTrunk = False
@@ -205,7 +211,9 @@ class PixelPlant:
                             frontier.append((n_i, n_j))
                 if not rooted:
                     return 0
-        return (energyProduced - energyConsumed) ** 2 + (nutrientsStored - nutrientsConsumed) ** 2
+
+        return self.rulesManager.calc_score(energyProduced, energyConsumed, nutrientsStored, nutrientsConsumed)
+
 
     def toImage(self):
         return img.toRGBImage(self.im)
