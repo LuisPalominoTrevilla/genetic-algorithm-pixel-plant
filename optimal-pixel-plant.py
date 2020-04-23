@@ -5,22 +5,23 @@ from pixelPlant import PixelPlant
 from rulesManager import RulesManager
 import sys
 
+
 def main():
-    if len(sys.argv) != 2 or sys.argv[1] not in ['1', '2', '3']:
-        print("Please, provide an execution mode as an argument (1, 2 or 3).")
-        print("Example: python3 optimal-pixel-plant.py 2")
+    if len(sys.argv) != 4 or sys.argv[1] not in ['1', '2', '3']:
+        print("Please, provide an execution mode as an argument (1, 2 or 3) and a number of generations and population size")
+        print("Example: python3 optimal-pixel-plant.py 2 500 10")
         return
 
     execution_mode = int(sys.argv[1])
     rulesManager = RulesManager(execution_mode)
 
-    pop_size = 60
+    pop_size = int(sys.argv[3])
     new_population = []
     for i in range(pop_size):
         new_population.append(PixelPlant(rulesManager))
         new_population[i].genRandom()
 
-    num_generations = 2000
+    num_generations = int(sys.argv[2])
 
     fittestPixelPlant = None
 
@@ -34,7 +35,8 @@ def main():
 
         new_population[0:len(parents)] = parents
         new_population[len(parents):] = offspring_crossover
-        print("Best result after generation", gen+1, ":", parents[0].getScore())
+        print("Best result after generation",
+              gen+1, ":", parents[0].getScore())
         fittestPixelPlant = parents[0]
 
     # Show fittest result

@@ -170,7 +170,6 @@ class PixelPlant:
                     branch_i, branch_j = frontier.pop()
                     num_branches += 1
                     if branch_i >= self.trunk_limit:
-                        print("Forbidden position branch")
                         forbidden_position = True
                         break
                     energyConsumed += .25
